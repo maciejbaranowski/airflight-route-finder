@@ -2,10 +2,14 @@
   "name": "skyscanner-analyzer",
   "version": "1.0.0",
   "description": "API for caching particular results of skyscanner queries",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "tsc && node dist/index.js"
   },
   "author": "Maciej Baranowski",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^10.12.7",
+    "typescript": "^3.1.6"
+  }
 }
