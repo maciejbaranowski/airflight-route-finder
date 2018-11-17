@@ -1,0 +1,23 @@
+html
+  head
+    title= "Wyniki wyszukiwania"
+    link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css')
+  body
+    div.container
+      if travels.length == 0
+        .jumbotron
+          h3= "Nie znaleziono lotów z tego lotniska!"
+      each travel in travels
+        div.row.mt-3
+          div.card-deck
+            each airport, index in travel
+              if index > 0
+                div.text-center(style="line-height:0.8")
+                  span(style="font-size:40px")= "➙"
+                  br
+                  span(style="font-size:12px").w-100= airport.getBy
+              div.card.text-center.shadow-sm(style="width: 18rem;")
+                div.card-header= airport.country
+                div.card-body
+                  h4.card-title= airport.city
+                  h6.card-text= airport.code + " - " + airport.name
