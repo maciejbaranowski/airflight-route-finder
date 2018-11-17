@@ -12,3 +12,11 @@ export type Destination = {
 }
 export type Destinations = Array<Destination>;
 export type DestinationsMap = Map<string, Destinations>;
+
+export type TravelDescriptions = Array<Array<{
+  code: string,
+  country: string,
+  city: string,
+  name: string,
+  getBy: string,
+}>>;

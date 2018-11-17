@@ -1,9 +1,9 @@
 import express from "express"
 import Scraper from "./scraper"
-import {Airport, DestinationsMap} from "./airportType"
+import {Airport, TravelDescriptions} from "./airportType"
 import fs from "fs"
 import travelAlgorithm from "./travelAlgorithm"
-import util from "util"
+import { filterNoDomestic, filterTooMuch } from "./filters";
 
 const app = express();
 const port = 3000;
@@ -53,16 +53,18 @@ app.get("/dump", (req, res) => {
   res.send("File Dumped");
 });
 
+
+
 app.get("/travel", (req, res) => {
   const source = req.query.from;
   const length = parseInt(req.query.length);
+  const filterOrigin = req.query.filterOrigin;
   fs.readFile("./data/destinations.json", (err, destinationsData) => {
     fs.readFile("./data/airports.json", (err, airportsData) => {
       let destinationsMap = JSON.parse(destinationsData.toString());
       let airports = JSON.parse(airportsData.toString());
       let travels = travelAlgorithm(destinationsMap, source, length);
-      travels = travels.slice(0,100);
-      let travelsDescriptions = travels.map((travel) => {
+      let travelsDescriptions : TravelDescriptions = travels.map((travel) => {
         return travel.map((destination) => {
           let airport = Object.assign({},airports[destination.airport]);
           airport = airport ? airport : {
@@ -75,6 +77,8 @@ app.get("/travel", (req, res) => {
           return airport;
         });
       });
+      if (filterOrigin) travelsDescriptions = filterNoDomestic(travelsDescriptions);
+      travelsDescriptions = filterTooMuch(travelsDescriptions);
       res.render("travels", {travels: travelsDescriptions});
     });
   });
