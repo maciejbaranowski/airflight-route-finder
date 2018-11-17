@@ -1,7 +1,14 @@
-import http from 'http';
+import express from "express"
+import Scraper from "./scraper"
 
-let server = http.createServer((request, response) => {
-  console.log(request);
-})
+const app = express();
+const port = 3000;
+const scraper = new Scraper();
 
-server.listen(3000);
+app.get("/", (req, res) => {
+  res.send(scraper.data);
+});
+
+app.listen(port, () => {
+  console.log(`API Listening on port ${port}`);
+});
