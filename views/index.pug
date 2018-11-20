@@ -1,6 +1,6 @@
 html
   head
-    title= "Wyniki wyszukiwania"
+    title= "Wyszukiwanie lotów multi-city w europejskich tanich liniach lotniczych"
     link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css')
   body
     .container
@@ -20,4 +20,13 @@ html
         .form-group
           input(type="checkbox", name="filterOrigin")
           label= "Nie pokazuj lotów do kraju początkowego"
+        .form-group
+          label= "Uwzględnij linie lotnicze:"
+          div
+            div.form-check
+              input(type="checkbox", name="ryanAirCheckBox")
+              label= "RyanAir"
+            div.form-check
+              input(type="checkbox", name="wizzAirCheckBox")
+              label= "Wizzair"
         button.btn.btn-primary(type="submit")= "Szukaj"

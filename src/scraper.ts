@@ -8,14 +8,17 @@ export default class Scraper {
   private browser : puppeteer.Browser | null = null;
   private runningPages : number = 0;
   private populateDestinationsFrom = (from : string, depth : number = 0) => {
+    if (depth > 10) {
+      console.log(`Max depth reached! Returning`);
+      return;
+    }
     if (this.destinationsMap.has(from)) {
       console.log(`Data for ${from} already acquired`);
       return;
     }
-    if (depth > 7) {
-      console.log(`Max depth reached! Returning`);
-      return;
-    }
+    this
+      .destinationsMap
+      .set(from, []); //placeholder, so that other threads know, that this is alredy to be set
     console.log(`Getting data from ${from}`);
     this
       .getListOfDestinationsFrom(from, true)
@@ -37,13 +40,17 @@ export default class Scraper {
         dump[key] = value;
       })
     fs.writeFile('./data/destinations.json', JSON.stringify(dump, null, 2), () => {});
+    const airportsDump : any = {};
+    this
+      .airports
+      .forEach((airport) => {
+        airportsDump[airport.code] = airport;
+      })
+    fs.writeFile('./data/airports.json', JSON.stringify(airportsDump, null, 2), () => {});
   }
   trigger() {
     puppeteer
-      .launch({headless: false,
-      args: [
-        '--proxy-server=88.199.21.75:80'
-      ]})
+      .launch({headless: false, args: ['--proxy-server=88.199.21.75:80']})
       .then((browser) => {
         this.browser = browser;
         this.populateDestinationsFrom("WRO");
@@ -88,7 +95,7 @@ export default class Scraper {
         'tiqcdn'
       ];
 
-      let url = `https://www.kayak.com/direct/${airport}/2018-12`;
+      let url = `https://www.kayak.pl/direct/${airport}/2018-12`;
       while (this.runningPages > 1) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
@@ -113,28 +120,52 @@ export default class Scraper {
         timeout: 25000,
         waitUntil: 'networkidle2'
       });
-      let destinations = await page.evaluate((onlyLowCost) => {
-        let getAirlineName = (airportHeader : HTMLDivElement) => {
-          if (airportHeader.querySelectorAll("[title='Ryanair']").length > 0) return "Ryanair";
-          if (airportHeader.querySelectorAll("[title='Wizz Air']").length > 0) return "Wizzair";
+      let scrappedData = await page.evaluate((onlyLowCost) => {
+        const getAirlineName = (airportHeader : HTMLDivElement) => {
+          if (airportHeader.querySelectorAll("[title='Ryanair']").length > 0) 
+            return "Ryanair";
+          if (airportHeader.querySelectorAll("[title='Wizz Air']").length > 0) 
+            return "Wizzair";
           return "Other";
         }
         return Array
           .from(document.querySelectorAll < HTMLDivElement > (".airportHeader"))
-          .map((element) : Destination => {
+          .map((element) => {
+            const code = /\(([A-Z]{3,4})\)/.exec(element.querySelector < HTMLDivElement > (".airportname")!.innerText)![1];
             return {
-              airport: element.querySelector < HTMLDivElement > (".airportname")!.innerText
-              .split("(")[1]
-              .split(")")[0],
-              airline: getAirlineName(element)
+              airport: code,
+              airline: getAirlineName(element),
+              airportDetails: {
+                code: code,
+                country: element.querySelector < HTMLDivElement > (".airportname")!
+                  .innerText
+                  .split(", ")[1]
+                  .split(" - ")[0],
+                city: element.querySelector < HTMLDivElement > (".airportname")!
+                  .innerText
+                  .split(",")[0],
+                name: element.querySelector < HTMLDivElement > (".airportname")!
+                  .innerText
+                  .split(" - ")[1]
+                  .split(" (")[0]
+              }
             };
           })
           .filter((element) => {
             return !onlyLowCost || element.airline !== "Other";
           })
-      }, onlyLowCost)
+      }, onlyLowCost);
       page.close();
       this.runningPages -= 1;
+      const destinations = scrappedData.map((data : any) => {
+        return {airport: data.airport, airline: data.airline}
+      });
+      const airports = scrappedData.map((data : any) => data.airportDetails)
+      airports.forEach((airport : Airport) => {
+        if (this.airports.indexOf(airport) === -1) 
+          this.airports.push(airport);
+        }
+      );
       resolve(destinations);
     });
   }

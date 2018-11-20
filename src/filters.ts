@@ -1,10 +1,9 @@
 import { TravelDescriptions } from "./airportType";
-import travelAlgorithm from "./travelAlgorithm";
 
 export const filterAirline = (travelDescriptions: TravelDescriptions, airline: string) => {
   return travelDescriptions.filter((travel) => {
     return travel.every((destination) => {
-      return destination.getBy === airline;
+      return destination.getBy !== airline || destination.getBy ==="-";
     })
   })
 }
