@@ -1,6 +1,6 @@
 import express from "express"
-import Scraper from "./scraper"
-import {TravelDescriptions} from "./airportType"
+import Scraper from "./dataProvider"
+import {TravelDescriptions} from "./types"
 import fs from "fs"
 import travelAlgorithm from "./travelAlgorithm"
 import {filterNoDomestic, filterTooMuch, filterAirline} from "./filters";

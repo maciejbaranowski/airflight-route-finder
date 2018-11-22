@@ -1,5 +1,5 @@
 import puppeteer, {Page} from 'puppeteer'
-import {Airports, Destinations} from "./airportType"
+import {Airports, Destinations} from "./types"
 
 export type KayakData = {
   destinations: Destinations,

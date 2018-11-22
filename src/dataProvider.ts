@@ -1,4 +1,4 @@
-import {Airport, Airports, DestinationsMap} from "./airportType"
+import {Airport, Airports, DestinationsMap} from "./types"
 import {KayakData, KayakScraper} from "./kayakScraper"
 import fs from 'fs';
 

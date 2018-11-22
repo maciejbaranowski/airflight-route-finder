@@ -1,4 +1,4 @@
-import { Airport, DestinationsMap, Destinations } from "./airportType";
+import { Airport, DestinationsMap, Destinations } from "./types";
 
 export default (destinationsMap : {[index : string] : Destinations}, source: string, length : number) : Array<Destinations> => {
   let output : Array<Destinations> = [];
