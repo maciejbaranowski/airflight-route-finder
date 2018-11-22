@@ -3,15 +3,29 @@ import {KayakData, KayakScraper} from "./kayakScraper"
 import fs from 'fs';
 
 export default class Scraper {
-  private airports : Airports = new Array;
-  private destinationsMap : DestinationsMap = new Map;
-  private kayakClient = new KayakScraper;
   async trigger() {
     await this
       .kayakClient
-      .trigger();
+      .launch();
     this.populateDestinationsFrom("WRO");
   };
+  
+  dumpToFile() {
+    let dump : any = {};
+    this
+      .destinationsMap
+      .forEach((value, key) => {
+        dump[key] = value;
+      })
+    fs.writeFile('./data/destinations.json', JSON.stringify(dump, null, 2), () => {});
+    const airportsDump : any = {};
+    this
+      .airports
+      .forEach((airport) => {
+        airportsDump[airport.code] = airport;
+      })
+    fs.writeFile('./data/airports.json', JSON.stringify(airportsDump, null, 2), () => {});
+  }
 
   private populateDestinationsFrom = (from : string, depth : number = 0) => {
     if (depth > 0) {
@@ -50,22 +64,8 @@ export default class Scraper {
           });
       });
   }
-  dumpToFile() {
-    let dump : any = {};
-    this
-      .getDestinationsMap()
-      .forEach((value, key) => {
-        dump[key] = value;
-      })
-    fs.writeFile('./data/destinations.json', JSON.stringify(dump, null, 2), () => {});
-    const airportsDump : any = {};
-    this
-      .airports
-      .forEach((airport) => {
-        airportsDump[airport.code] = airport;
-      })
-    fs.writeFile('./data/airports.json', JSON.stringify(airportsDump, null, 2), () => {});
-  }
-  getDestinationsMap() : DestinationsMap {return this.destinationsMap;}
 
+  private airports : Airports = new Array;
+  private destinationsMap : DestinationsMap = new Map;
+  private kayakClient = new KayakScraper;
 };

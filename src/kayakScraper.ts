@@ -7,14 +7,17 @@ export type KayakData = {
 };
 
 export class KayakScraper {
-  private browser : puppeteer.Browser | null = null;
-  private runningPages : number = 0;
-  async trigger() {
+  private configuration = {
+    headless: true,
+    browserArgs: [''],
+    /*['--proxy-server=88.199.21.75:80']*/
+    browserTimeout: 40000
+  }
+
+  async launch() {
     new Promise((resolve, reject) => {
       puppeteer
-        .launch({
-        headless: false/*, args: ['--proxy-server=88.199.21.75:80']*/
-      })
+        .launch({headless: this.configuration.headless, args: this.configuration.browserArgs})
         .then((browser) => {
           this.browser = browser;
           resolve();
@@ -123,8 +126,11 @@ export class KayakScraper {
       }
     });
     await page.goto(url, {
-      timeout: 40000,
+      timeout: this.configuration.browserTimeout,
       waitUntil: 'networkidle2'
     });
   }
+
+  private browser : puppeteer.Browser | null = null;
+  private runningPages : number = 0;
 }
