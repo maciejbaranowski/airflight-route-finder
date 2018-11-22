@@ -12,7 +12,7 @@ const scraper = new Scraper();
 
 app.set("view engine", "pug");
 
-app.get("/trigger/destinations", (req, res) => {
+app.get("/trigger", (req, res) => {
   try {
     scraper.trigger();
   } catch {
@@ -54,13 +54,13 @@ app.get("/travel", (req, res) => {
       });
       if (filterOrigin) 
         travelsDescriptions = filterNoDomestic(travelsDescriptions);
-      travelsDescriptions = filterTooMuch(travelsDescriptions);
       if (!includeRyanAir) {
         travelsDescriptions = filterAirline(travelsDescriptions, "Ryanair")
       }
       if (!includeWizzAir) {
         travelsDescriptions = filterAirline(travelsDescriptions, "Wizzair")
       }
+      travelsDescriptions = filterTooMuch(travelsDescriptions);
       res.render("travels", {travels: travelsDescriptions});
     });
   });

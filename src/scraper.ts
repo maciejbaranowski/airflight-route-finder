@@ -1,14 +1,14 @@
 import puppeteer from 'puppeteer'
-import {Airport, AirportList, Destination, Destinations, DestinationsMap} from "./airportType"
+import {Airport, Airports, Destination, Destinations, DestinationsMap} from "./airportType"
 import fs from 'fs';
 
 export default class Scraper {
-  private airports : AirportList = new Array;
+  private airports : Airports = new Array;
   private destinationsMap : DestinationsMap = new Map;
   private browser : puppeteer.Browser | null = null;
   private runningPages : number = 0;
   private populateDestinationsFrom = (from : string, depth : number = 0) => {
-    if (depth > 10) {
+    if (depth > 0) {
       console.log(`Max depth reached! Returning`);
       return;
     }
@@ -21,13 +21,18 @@ export default class Scraper {
       .set(from, []); //placeholder, so that other threads know, that this is alredy to be set
     console.log(`Getting data from ${from}`);
     this
-      .getListOfDestinationsFrom(from, true)
-      .then((value) => {
+      .getListOfDestinationsFrom(from)
+      .then((kayakData : KayakData) => {
+        kayakData.airports.forEach((airport: Airport) => {
+          if (this.airports.indexOf(airport) === -1) {
+            this.airports.push(airport);
+          }
+        });
         this
           .destinationsMap
-          .set(from, value);
+          .set(from, kayakData.destinations.filter((destination) => (destination.airline === "Ryanair" || destination.airline === "Wizzair")));
         console.log(`Data loaded for ${from}`);
-        value.forEach((destination) => {
+        kayakData.destinations.forEach((destination) => {
           this.populateDestinationsFrom(destination.airport, depth + 1);
         });
       });
@@ -50,19 +55,15 @@ export default class Scraper {
   }
   trigger() {
     puppeteer
-      .launch({headless: false, args: ['--proxy-server=88.199.21.75:80']})
+      .launch({headless: false/*, args: ['--proxy-server=88.199.21.75:80']*/})
       .then((browser) => {
         this.browser = browser;
         this.populateDestinationsFrom("WRO");
       });
-  }
-  constructor() {
-    console.log("Scraper initialized");
-  }
-
+  };
   getDestinationsMap() : DestinationsMap {return this.destinationsMap;}
-  getListOfDestinationsFrom(airport : string, onlyLowCost : boolean) : Promise < Destinations > {
-    return new Promise < Destinations > (async(resolve, reject) => {
+  getListOfDestinationsFrom(airport : string) : Promise < KayakData > {
+    return new Promise(async(resolve, reject) => {
       const blockedResourceTypes = [
         'image',
         'media',
@@ -117,10 +118,10 @@ export default class Scraper {
         }
       });
       await page.goto(url, {
-        timeout: 25000,
+        timeout: 40000,
         waitUntil: 'networkidle2'
       });
-      let scrappedData = await page.evaluate((onlyLowCost) => {
+      let scrappedData = await page.evaluate(() => {
         const getAirlineName = (airportHeader : HTMLDivElement) => {
           if (airportHeader.querySelectorAll("[title='Ryanair']").length > 0) 
             return "Ryanair";
@@ -128,14 +129,18 @@ export default class Scraper {
             return "Wizzair";
           return "Other";
         }
-        return Array
-          .from(document.querySelectorAll < HTMLDivElement > (".airportHeader"))
-          .map((element) => {
-            const code = /\(([A-Z]{3,4})\)/.exec(element.querySelector < HTMLDivElement > (".airportname")!.innerText)![1];
-            return {
-              airport: code,
-              airline: getAirlineName(element),
-              airportDetails: {
+        return {
+          destinations: Array
+            .from(document.querySelectorAll < HTMLDivElement > (".airportHeader"))
+            .map((element) => {
+              const code = /\(([A-Z]{3,4})\)/.exec(element.querySelector < HTMLDivElement > (".airportname")!.innerText)![1];
+              return {airport: code, airline: getAirlineName(element)};
+            }),
+          airports: Array
+            .from(document.querySelectorAll < HTMLDivElement > (".airportHeader"))
+            .map((element) => {
+              const code = /\(([A-Z]{3,4})\)/.exec(element.querySelector < HTMLDivElement > (".airportname")!.innerText)![1];
+              return {
                 code: code,
                 country: element.querySelector < HTMLDivElement > (".airportname")!
                   .innerText
@@ -148,25 +153,20 @@ export default class Scraper {
                   .innerText
                   .split(" - ")[1]
                   .split(" (")[0]
-              }
-            };
-          })
-          .filter((element) => {
-            return !onlyLowCost || element.airline !== "Other";
-          })
-      }, onlyLowCost);
+              };
+            })
+        }
+      });
       page.close();
       this.runningPages -= 1;
-      const destinations = scrappedData.map((data : any) => {
-        return {airport: data.airport, airline: data.airline}
-      });
-      const airports = scrappedData.map((data : any) => data.airportDetails)
-      airports.forEach((airport : Airport) => {
-        if (this.airports.indexOf(airport) === -1) 
-          this.airports.push(airport);
-        }
-      );
-      resolve(destinations);
+      resolve(scrappedData);
     });
   }
 };
+
+type KayakData = {
+  destinations: Destinations,
+  airports: Airports
+};
+
+class KayakScraper {}

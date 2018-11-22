@@ -5,7 +5,7 @@ export interface Airport {
   name: string
 };
 
-export type AirportList = Array<Airport>;
+export type Airports = Array<Airport>;
 export type Destination = {
   airport : string,
   airline : string

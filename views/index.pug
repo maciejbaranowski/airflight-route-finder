@@ -1,32 +1,41 @@
 html
   head
-    title= "Wyszukiwanie lotów multi-city w europejskich tanich liniach lotniczych"
+    title= "Wyszukiwanie kombinacji lotniczych multi-city w europejskich tanich liniach lotniczych"
     link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css')
   body
     .container
-      form(action="/travel", method="GET")
-        .form-group
-          label= "Lotnisko startowe:"
-          select.form-control(name="from")
-            each airport in airports
-              option(value=airport.code)= airport.code + " - " + airport.city + " (" + airport.country + ")"
-        .form-group
-          label= "Ilość odwiedzanych miast:"
-          select.form-control(name="length")
-            option= 1
-            option= 2
-            option= 3
-            option= 4
-        .form-group
-          input(type="checkbox", name="filterOrigin")
-          label= "Nie pokazuj lotów do kraju początkowego"
-        .form-group
-          label= "Uwzględnij linie lotnicze:"
-          div
-            div.form-check
-              input(type="checkbox", name="ryanAirCheckBox")
-              label= "RyanAir"
-            div.form-check
-              input(type="checkbox", name="wizzAirCheckBox")
-              label= "Wizzair"
-        button.btn.btn-primary(type="submit")= "Szukaj"
+      .jumbotron.row
+        h1= "Wyszukiwarka kombinacji lotniczych multi-city w europejskich liniach lotniczych"
+        span= "Aplikacja umożliwia znajdowanie wszystkich dostępnych tras lotniczych, zgodnych z zadanymi kryteriami, które tworzą cykl, tj. wylot i powrót z tego samego lotniska, odwiedzając po drodze określoną liczbę miejsc"
+      .row
+        .col-8
+          form(action="/travel", method="GET")
+            .form-group
+              label= "Lotnisko startowe:"
+              select.form-control(name="from")
+                each airport in airports
+                  option(value=airport.code)= airport.code + " - " + airport.city + " (" + airport.country + ")"
+            .form-group
+              label= "Ilość odwiedzanych miast:"
+              select.form-control(name="length")
+                option= 1
+                option= 2
+                option= 3
+                option= 4
+            .form-group
+              input(type="checkbox", name="filterOrigin")
+              label= "Nie pokazuj lotów do kraju początkowego"
+            .form-group
+              label= "Uwzględnij linie lotnicze:"
+              div
+                div.form-check
+                  input(type="checkbox", name="ryanAirCheckBox")
+                  label= "RyanAir"
+                div.form-check
+                  input(type="checkbox", name="wizzAirCheckBox")
+                  label= "Wizzair"
+            button.btn.btn-primary(type="submit")= "Szukaj"
+        .col-4
+          h4= "Administracja"
+          a.btn.btn-warning(href="/trigger")= "Pobierz dane"
+          a.btn.btn-danger(href="/dump")= "Zapisz dane"
