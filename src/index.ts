@@ -6,7 +6,7 @@ import travelAlgorithm from "./travelAlgorithm"
 import {filterNoDomestic, filterTooMuch, filterAirline} from "./filters";
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 const dataProvider = new DataProvider();
 
