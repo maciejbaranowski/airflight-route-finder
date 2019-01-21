@@ -18,5 +18,5 @@ export type TravelDescriptions = Array<Array<{
   country: string,
   city: string,
   name: string,
-  getBy: string,
+  airline: string,
 }>>;

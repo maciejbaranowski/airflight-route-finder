@@ -2,14 +2,21 @@ import {Airport, Airports, DestinationsMap} from "./types"
 import {KayakData, KayakScraper} from "./kayakScraper"
 import fs from 'fs';
 
-export default class Scraper {
+const INITIAL_DESTINATION = "WRO";
+const MAX_DEPTH = 3;
+
+export default class DataProvider {
   async trigger() {
-    await this
+    this
       .kayakClient
-      .launch();
-    this.populateDestinationsFrom("WRO");
+      .launch()
+      .then(() => {
+        this.requestsQueueLength = 0;
+        this.populateDestinationsFrom(INITIAL_DESTINATION);
+      })
+      .catch(console.log);
   };
-  
+
   dumpToFile() {
     let dump : any = {};
     this
@@ -25,11 +32,16 @@ export default class Scraper {
         airportsDump[airport.code] = airport;
       })
     fs.writeFile('./data/airports.json', JSON.stringify(airportsDump, null, 2), () => {});
+    console.log("Files written");
   }
 
   private populateDestinationsFrom = (from : string, depth : number = 0) => {
-    if (depth > 0) {
-      console.log(`Max depth reached! Returning`);
+    if (depth > MAX_DEPTH) {
+      console.log(`Max depth reached! Still ${this.requestsQueueLength} requests to finish`);
+      if (this.requestsQueueLength === 1) {
+        this.requestsQueueLength = 0;
+        this.dumpToFile();
+      }
       return;
     }
     if (this.destinationsMap.has(from)) {
@@ -39,11 +51,13 @@ export default class Scraper {
     this
       .destinationsMap
       .set(from, []); //placeholder, so that other threads know, that this is alredy to be set
+    this.requestsQueueLength += 1;
+
     console.log(`Getting data from ${from}`);
     this
       .kayakClient
       .getDestinations(from)
-      .then((kayakData : KayakData) => {
+      .then(kayakData => {
         kayakData
           .airports
           .forEach((airport : Airport) => {
@@ -56,16 +70,22 @@ export default class Scraper {
         this
           .destinationsMap
           .set(from, kayakData.destinations.filter((destination) => (destination.airline === "Ryanair" || destination.airline === "Wizzair")));
-        console.log(`Data loaded for ${from}`);
         kayakData
           .destinations
           .forEach((destination) => {
             this.populateDestinationsFrom(destination.airport, depth + 1);
           });
-      });
+        console.log(`Data loaded for ${from}`);
+        this.requestsQueueLength -= 1;
+      })
+      .catch((e) => {
+        console.log(e);
+        this.requestsQueueLength -= 1;
+      })
   }
 
   private airports : Airports = new Array;
   private destinationsMap : DestinationsMap = new Map;
   private kayakClient = new KayakScraper;
+  private requestsQueueLength = 0;
 };

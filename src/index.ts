@@ -1,5 +1,5 @@
 import express from "express"
-import Scraper from "./dataProvider"
+import DataProvider from "./dataProvider"
 import {TravelDescriptions} from "./types"
 import fs from "fs"
 import travelAlgorithm from "./travelAlgorithm"
@@ -8,21 +8,21 @@ import {filterNoDomestic, filterTooMuch, filterAirline} from "./filters";
 const app = express();
 const port = 3000;
 
-const scraper = new Scraper();
+const dataProvider = new DataProvider();
 
 app.set("view engine", "pug");
 
 app.get("/trigger", (req, res) => {
-  try {
-    scraper.trigger();
-  } catch {
-    console.log("Failure when scrapping, results so far should be still there");
-  }
-  res.send("Triggered!");
+  dataProvider
+    .trigger()
+    .then(() => {
+      res.send("Triggered!");
+    })
+    .catch(res.send);
 });
 
 app.get("/dump", (req, res) => {
-  scraper.dumpToFile();
+  dataProvider.dumpToFile();
   res.send("File Dumped");
 });
 
@@ -48,7 +48,7 @@ app.get("/travel", (req, res) => {
               city: "",
               name: ""
             };
-          airport.getBy = destination.airline;
+          airport.airline = destination.airline;
           return airport;
         });
       });

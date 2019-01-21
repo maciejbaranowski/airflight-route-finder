@@ -8,37 +8,43 @@ export type KayakData = {
 
 export class KayakScraper {
   private configuration = {
-    headless: true,
+    headless: false,
     browserArgs: [''],
     /*['--proxy-server=88.199.21.75:80']*/
     browserTimeout: 40000
   }
 
   async launch() {
-    new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       puppeteer
         .launch({headless: this.configuration.headless, args: this.configuration.browserArgs})
         .then((browser) => {
           this.browser = browser;
           resolve();
-        });
+        })
+        .catch(reject);
     });
   };
   getDestinations(airport : string) : Promise < KayakData > {
     return new Promise(async(resolve, reject) => {
-      const year = 2018;
-      const month = 12;
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = date.getMonth();
       let url = `https://www.kayak.pl/direct/${airport}/${year}-${month}`;
       while (this.runningPages > 1) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
       this.runningPages += 1;
-      const page = await this.browser !.newPage();
-      this.setupPage(page, url);
-      let scrappedData = await page.evaluate(this.pageEvaluationOnClient);
-      page.close();
-      this.runningPages -= 1;
-      resolve(scrappedData);
+      try {
+        let page = await this.browser!.newPage();
+        page = await this.setupPage(page, url);
+        let scrappedData = await page.evaluate(this.pageEvaluationOnClient);
+        page.close();
+        this.runningPages -= 1;
+        resolve(scrappedData);
+      } catch(e) {
+        reject(`Running page failed, due to: ${e}`);
+      }
     });
   }
 
@@ -78,7 +84,7 @@ export class KayakScraper {
         })
     }
   }
-  private async setupPage(page : Page, url : string) {
+  private async setupPage(page : Page, url : string) : Promise<Page> {
     const blockedResourceTypes = [
       'image',
       'media',
@@ -129,6 +135,7 @@ export class KayakScraper {
       timeout: this.configuration.browserTimeout,
       waitUntil: 'networkidle2'
     });
+    return page;
   }
 
   private browser : puppeteer.Browser | null = null;
